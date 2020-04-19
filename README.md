@@ -3,7 +3,7 @@ A playground for testing and building an isometric game in phaser.js
 
 
 # installation
-Clone the repo
+Clone the repo  
 npm i
-run your mamp/wamp or any web server you prefer
-
+npm run build  
+run your mamp/wamp or any web server you prefer  
