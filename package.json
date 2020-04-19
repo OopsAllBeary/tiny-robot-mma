@@ -1,0 +1,24 @@
+{
+  "name": "tiny-robot-mma",
+  "version": "1.0.0",
+  "description": "A playground for testing and building an isometric game in phaser.js",
+  "main": "game.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "browserify game.js -o bundle.js",
+    "start": "watchify game.js -o bundle.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OopsAllBeary/tiny-robot-mma.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/OopsAllBeary/tiny-robot-mma/issues"
+  },
+  "homepage": "https://github.com/OopsAllBeary/tiny-robot-mma#readme",
+  "dependencies": {
+    "phaser3-plugin-isometric": "0.0.7"
+  }
+}
