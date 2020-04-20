@@ -27,7 +27,7 @@ function preload ()
     this.load.spritesheet('blueman', 'assets/bluemansp/spritesheet.png', { frameWidth: 252, frameHeight: 180, endFrame: 16 });
     // this.load.setBaseURL('http://labs.phaser.io');
     //
-    // this.load.image('sky', 'assets/skies/space3.png');
+    this.load.image('sky', 'http://labs.phaser.io/assets/skies/space3.png');
     // this.load.image('logo', 'assets/sprites/phaser3-logo.png');
     // this.load.image('red', 'assets/particles/red.png');
 }
