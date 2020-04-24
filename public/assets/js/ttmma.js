@@ -19,7 +19,8 @@ var game = new Phaser.Game(config);
 
 var blueman,
 cursors,
-facing;
+facing,
+self;
 
 var vel = {
   down: [0, 100],
@@ -41,12 +42,14 @@ function preload ()
   this.load.spritesheet('blueman-cheer', '/assets/assets/blueman-cheer/spritesheet.png', { frameWidth: 122, frameHeight: 102, endFrame: 336 });
 
   this.load.spritesheet('blueman-punch', '/assets/assets/blueman-punch/spritesheet.png', { frameWidth: 124, frameHeight: 100, endFrame: 224 });
+
+  this.load.spritesheet('punch', '/assets/assets/blueman-punch/spritesheet.png', { frameWidth: 54, frameHeight: 104, endFrame: 16 });
 }
 
 function create ()
 {
 
-  var self = this;
+  self = this;
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
   this.socket.on('currentPlayers', function (players) {
@@ -249,6 +252,12 @@ function create ()
     repeat: 0
   });
 
+  this.anims.create({
+    key: 'punch',
+    frames: [ { key: 'punch', frame: 8 } ],
+    frameRate: 10,
+    repeat: -1
+  });
 
 }
 
@@ -268,6 +277,7 @@ function update ()
 
             this.hero.facing = "upleft";
           }
+
           else if (cursors.down.isDown)
           {
             this.hero.setVelocityX(-75);
@@ -400,19 +410,20 @@ function frames(type, frames, offset) {
   return object;
 }
 
-function addPlayer(self, playerInfo) {
-  self.hero = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'blueman', 0).setOrigin(0.5, 0.5);
+function addPlayer(selfs, playerInfo) {
+  selfs.hero = selfs.physics.add.sprite(playerInfo.x, playerInfo.y, 'blueman', 0).setOrigin(0.5, 0.5);
   if (playerInfo.team === 'blue') {
-    self.hero.setTint(0xAAAAFF);
+    selfs.hero.setTint(0xAAAAFF);
   } else {
-    self.hero.setTint(0xFFAAAA);
+    selfs.hero.setTint(0xFFAAAA);
   }
 
-  self.hero.acting = false;
+  selfs.hero.acting = false;
+  selfs.hero.facing = 'down';
 }
 
-function addOtherPlayers(self, playerInfo) {
-  const otherPlayer = self.add.sprite(playerInfo.x, playerInfo.y, 'blueman', 0).setOrigin(0.5, 0.5);
+function addOtherPlayers(selfs, playerInfo) {
+  const otherPlayer = selfs.add.sprite(playerInfo.x, playerInfo.y, 'blueman', 0).setOrigin(0.5, 0.5);
   if (playerInfo.team === 'blue') {
     otherPlayer.setTint(0x0000ff);
   } else {
@@ -420,7 +431,7 @@ function addOtherPlayers(self, playerInfo) {
   }
   otherPlayer.playerId = playerInfo.playerId;
   otherPlayer.facing = 'down';
-  self.otherPlayers.add(otherPlayer);
+  selfs.otherPlayers.add(otherPlayer);
 }
 
 function moveHero(hero, playerInfo) {
@@ -484,10 +495,19 @@ function punch(hero) {
   hero.acting = true;
 
   let anima = 'punch-' + hero.facing;
+  console.log(anima);
+
 
   hero.anims.play(anima, true);
 
   hero.setVelocity(vel[hero.facing][0] * 1.5, vel[hero.facing][1] * 1.5);
+
+  self.punch = self.physics.add.sprite(hero.x, hero.y, 'punch', 8).setOrigin(0.5, 0.5);
+  if (hero.team === 'blue') {
+    self.punch.setTint(0xAAAAFF);
+  } else {
+    self.punch.setTint(0xFFAAAA);
+  }
 
 
 
