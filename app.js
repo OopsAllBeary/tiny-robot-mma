@@ -44,13 +44,13 @@ app.use('/', routes);
 app.use('/', passport.authenticate('jwt', { session : false }), secureRoutes);
 
 // catch all other routes
-app.use((req, res, next) => {
+app.use((req, res) => {
   res.status(404);
   res.json({ message: '404 - Not Found' });
 });
 
 // handle errors
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   res.status(err.status || 500);
   res.json({ error : err });
 });

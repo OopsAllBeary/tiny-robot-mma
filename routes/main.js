@@ -5,16 +5,16 @@ const jwt = require('jsonwebtoken');
 const tokenList = [];
 const router = express.Router();
 
-router.get('/status', (req, res, next) => {
+router.get('/status', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-router.post('/signup', passport.authenticate('signup', { session: false }), async (req, res, next) => {
+router.post('/signup', passport.authenticate('signup', { session: false }), async (req, res) => {
   res.status(200).json({ message: 'signup successful' });
 });
 
 router.post('/login', async (req, res, next) => {
-  passport.authenticate('login', async (err, user, info) => {
+  passport.authenticate('login', async (err, user) => {
     try {
       if (err || !user) {
         const error = new Error('An Error occured');
@@ -52,7 +52,7 @@ router.post('/login', async (req, res, next) => {
 });
 
 router.post('/token', (req, res) => {
-  const { email, refreshToken } = req.body;
+  const { refreshToken } = req.body;
 
   // console.log(req.body);
   // console.log(tokenList[refreshToken]);

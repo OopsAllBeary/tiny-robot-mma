@@ -17,10 +17,8 @@ var config = {
 
 var game = new Phaser.Game(config);
 
-var blueman,
-cursors,
-facing,
-self;
+var cursors,
+    self;
 
 var vel = {
   down: [0, 100],
@@ -43,7 +41,7 @@ function preload ()
 
   this.load.spritesheet('blueman-punch', '/assets/assets/blueman-punch/spritesheet.png', { frameWidth: 124, frameHeight: 100, endFrame: 224 });
 
-  this.load.spritesheet('punch', '/assets/assets/blueman-punch/spritesheet.png', { frameWidth: 54, frameHeight: 104, endFrame: 16 });
+  this.load.spritesheet('punch', '/assets/assets/fist/spritesheet.png', { frameWidth: 54, frameHeight: 104, endFrame: 16 });
 }
 
 function create ()
@@ -51,7 +49,15 @@ function create ()
 
   self = this;
   this.socket = io();
-  this.otherPlayers = this.physics.add.group();
+  this.heros = this.physics.add.group({ collideWorldBounds: true });
+  this.otherPlayers = this.physics.add.group({ collideWorldBounds: true });
+
+  this.attacks = this.physics.add.group({ collideWorldBounds: true });
+  // this.physics.add.collider(this.otherPlayers, this.attacks);
+  this.physics.add.collider(this.otherPlayers, this.heros);
+  this.physics.add.overlap(this.otherPlayers, this.attacks, hitCollide, null, this);
+
+
   this.socket.on('currentPlayers', function (players) {
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === self.socket.id) {
@@ -264,7 +270,8 @@ function create ()
 function update ()
 {
   if (this.hero) {
-    if (!this.hero.acting) {
+    console.log(this.hero.acting);
+    if (this.hero.acting === false) {
       if (cursors.space.isDown) {
         punch(this.hero);
       } else {
@@ -411,10 +418,13 @@ function frames(type, frames, offset) {
 }
 
 function addPlayer(selfs, playerInfo) {
-  selfs.hero = selfs.physics.add.sprite(playerInfo.x, playerInfo.y, 'blueman', 0).setOrigin(0.5, 0.5);
+  selfs.hero = selfs.physics.add.sprite(playerInfo.x, playerInfo.y, 'blueman', 0).setOrigin(0.5, 0.5).setSize(50, 50, true);
+  selfs.heros.add(selfs.hero);
   if (playerInfo.team === 'blue') {
+    selfs.hero.team = 'blue';
     selfs.hero.setTint(0xAAAAFF);
   } else {
+    selfs.hero.team = 'red';
     selfs.hero.setTint(0xFFAAAA);
   }
 
@@ -423,7 +433,8 @@ function addPlayer(selfs, playerInfo) {
 }
 
 function addOtherPlayers(selfs, playerInfo) {
-  const otherPlayer = selfs.add.sprite(playerInfo.x, playerInfo.y, 'blueman', 0).setOrigin(0.5, 0.5);
+  var otherPlayer = selfs.physics.add.sprite(playerInfo.x, playerInfo.y, 'blueman', 0).setOrigin(0.5, 0.5).setSize(50, 50, true).setImmovable().setCollideWorldBounds(true);
+
   if (playerInfo.team === 'blue') {
     otherPlayer.setTint(0x0000ff);
   } else {
@@ -493,25 +504,83 @@ function moveHero(hero, playerInfo) {
 
 function punch(hero) {
   hero.acting = true;
+  // self.input.keyboard.enabled = false;
 
   let anima = 'punch-' + hero.facing;
-  console.log(anima);
 
 
   hero.anims.play(anima, true);
 
   hero.setVelocity(vel[hero.facing][0] * 1.5, vel[hero.facing][1] * 1.5);
 
-  self.punch = self.physics.add.sprite(hero.x, hero.y, 'punch', 8).setOrigin(0.5, 0.5);
+  self.punch = self.physics.add.sprite(hero.x, hero.y, 'punch', 0).setOrigin(0.5, 0.5).setScale(0.5);
+  self.attacks.add(self.punch);
   if (hero.team === 'blue') {
     self.punch.setTint(0xAAAAFF);
   } else {
     self.punch.setTint(0xFFAAAA);
   }
 
+  self.punch.setVelocity(vel[hero.facing][0] * 2, vel[hero.facing][1] * 2);
 
+  switch (hero.facing) {
+    case 'down':
+      self.punch.setAngle(180);
+      self.punch.setPosition(hero.x - 20, hero.y - 20);
+      break;
+    case 'up':
+      self.punch.setAngle(0);
+      self.punch.setPosition(hero.x + 15, hero.y - 20);
+      break;
+    case 'left':
+      self.punch.setAngle(-90);
+      self.punch.setFrame(10);
+      self.punch.setPosition(hero.x - 10, hero.y - 35);
+      break;
+    case 'right':
+      self.punch.setAngle(90);
+      // self.punch.setFrame(14);
+      self.punch.setPosition(hero.x, hero.y - 15);
+      break;
+    case 'upright':
+      self.punch.setAngle(45);
+      self.punch.setPosition(hero.x + 5, hero.y - 10);
+      break;
+    case 'upleft':
+      self.punch.setAngle(-45);
+      self.punch.setPosition(hero.x + 10, hero.y - 35);
+      break;
+    case 'downright':
+      self.punch.setAngle(135);
+      self.punch.setPosition(hero.x - 15, hero.y - 15);
+      break;
+    case 'downleft':
+      self.punch.setAngle(-135);
+      self.punch.setPosition(hero.x - 15, hero.y - 40);
+      break;
+  }
+  self.punch.facing = hero.facing;
 
-  hero.on('animationcomplete', () => {
+  var timer = self.time.delayedCall(400, () => {
+    // self.input.keyboard.enabled = true;
+    // self.input.keyboard.clearCaptures();
+
     hero.acting = false;
+    if (self.punch) {
+      self.punch.destroy();
+    }
+    timer.destroy();
   });
+}
+
+function hitCollide (player, attack) {
+  attack.destroy();
+  player.body.setVelocity(vel[attack.facing][0] * 3, vel[attack.facing][1] * 3);
+
+  self.time.delayedCall(300, () => {
+    player.body.setVelocity(0);
+  });
+
+  console.log(player);
+  console.log(attack);
 }
