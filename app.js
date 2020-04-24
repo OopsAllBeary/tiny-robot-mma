@@ -88,6 +88,7 @@ io.on('connection', function (socket) {
     players[socket.id].x = movementData.x;
     players[socket.id].y = movementData.y;
     players[socket.id].facing = movementData.facing;
+    players[socket.id].animata = movementData.animata;
     // emit a message to all players about the player that moved
     socket.broadcast.emit('playerMoved', players[socket.id]);
   });
