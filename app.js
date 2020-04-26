@@ -85,12 +85,20 @@ io.on('connection', function (socket) {
 
   // when a player moves, update the player data
   socket.on('playerMovement', function (movementData) {
-    players[socket.id].x = movementData.x;
-    players[socket.id].y = movementData.y;
-    players[socket.id].facing = movementData.facing;
-    players[socket.id].animata = movementData.animata;
+    if (players[movementData.playerId]) {
+      players[movementData.playerId].x = movementData.x;
+      players[movementData.playerId].y = movementData.y;
+      players[movementData.playerId].facing = movementData.facing;
+      players[movementData.playerId].animata = movementData.animata;
+      // emit a message to all players about the player that moved
+      socket.broadcast.emit('playerMoved', players[movementData.playerId]);
+    }
+  });
+
+  socket.on('playerHurt', function (playerData) {
+    players[playerData.playerId].hp = playerData.hp;
     // emit a message to all players about the player that moved
-    socket.broadcast.emit('playerMoved', players[socket.id]);
+    socket.broadcast.emit('playerHurt', players[playerData.playerId]);
   });
 });
 
