@@ -21,6 +21,10 @@ var game = new Phaser.Game(config);
 var cursors,
     self;
 
+var punchStrong,
+    punchSlap,
+    punchWoosh;
+
 var vel = {
   down: [0, 100],
   downleft: [-75, 75],
@@ -34,15 +38,19 @@ var vel = {
 
 function preload ()
 {
-  this.load.spritesheet('blueman', '/assets/assets/bluemansp/spritesheet.png', { frameWidth: 104, frameHeight: 92, endFrame: 16 });
+  this.load.spritesheet('blueman', '/assets/sprites/bluemansp/spritesheet.png', { frameWidth: 104, frameHeight: 92, endFrame: 16 });
 
-  this.load.spritesheet('blueman-walk', '/assets/assets/blueman-walk/spritesheet.png', { frameWidth: 108, frameHeight: 94, endFrame: 192 });
+  this.load.spritesheet('blueman-walk', '/assets/sprites/blueman-walk/spritesheet.png', { frameWidth: 108, frameHeight: 94, endFrame: 192 });
 
-  this.load.spritesheet('blueman-cheer', '/assets/assets/blueman-cheer/spritesheet.png', { frameWidth: 122, frameHeight: 102, endFrame: 336 });
+  this.load.spritesheet('blueman-cheer', '/assets/sprites/blueman-cheer/spritesheet.png', { frameWidth: 122, frameHeight: 102, endFrame: 336 });
 
-  this.load.spritesheet('blueman-punch', '/assets/assets/blueman-punch/spritesheet.png', { frameWidth: 124, frameHeight: 100, endFrame: 224 });
+  this.load.spritesheet('blueman-punch', '/assets/sprites/blueman-punch/spritesheet.png', { frameWidth: 124, frameHeight: 100, endFrame: 224 });
 
-  this.load.spritesheet('punch', '/assets/assets/fist/spritesheet.png', { frameWidth: 54, frameHeight: 104, endFrame: 16 });
+  this.load.spritesheet('punch', '/assets/sprites/fist/spritesheet.png', { frameWidth: 54, frameHeight: 104, endFrame: 16 });
+
+  this.load.audio('punchSlap', 'assets/audio/slap.mp3');
+  this.load.audio('punchStrong', 'assets/audio/spunch.mp3');
+  this.load.audio('punchWoosh', 'assets/audio/woosh.mp3');
 }
 
 function create ()
@@ -51,6 +59,10 @@ function create ()
   this.socket = io();
 
   createAnimations(this, ['blueman', 'blueman-walk', 'blueman-punch', 'punch']);
+
+  punchStrong = game.sound.add("punchStrong");
+  punchSlap = game.sound.add("punchSlap");
+  punchWoosh = game.sound.add("punchWoosh");
 
   this.heros = this.physics.add.group({ collideWorldBounds: true });
   this.otherPlayers = this.physics.add.group({ collideWorldBounds: true, immovable: true });
@@ -158,6 +170,8 @@ function addPlayer(selfs, playerInfo) {
 
 function hitCollide (player, attack) {
 
+  punchSlap.play();
+
   player.body.setVelocity(vel[attack.facing][0] * 3, vel[attack.facing][1] * 3);
   attack.body.setVelocity(vel[attack.facing][0], vel[attack.facing][1]);
   player.forcedMove = true;
@@ -183,6 +197,7 @@ function hitCollide (player, attack) {
 function controls (player, socket) {
   if (!player.acting) {
     if (cursors.space.isDown) {
+      punchWoosh.play();
       player.mainAttack();
     } else {
       if (cursors.left.isDown) {

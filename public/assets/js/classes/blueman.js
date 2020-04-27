@@ -6,6 +6,7 @@ class Player extends Phaser.GameObjects.Sprite {
 
     this.bodyCheck = false;
     this.forcedMove = false;
+    this.invinsible = 0;
     this.hp = 50;
 
     this.socket = config.socket;
@@ -23,6 +24,10 @@ class Player extends Phaser.GameObjects.Sprite {
 
     if (this.forcedMove === true) {
       this.socket.emit('playerMovement', { x: this.x, y: this.y, facing: this.facing, animata: this.anims.currentAnim.key, playerId: this.playerId });
+    }
+
+    if (this.invinsible > 0) {
+      this.invinsible -= 1;
     }
   }
   moveInDirection (dir, socket) {
@@ -164,7 +169,13 @@ class Player extends Phaser.GameObjects.Sprite {
   }
 
   takeDamage(dam) {
-    this.hp -= dam;
+
+    if (this.invinsible === 0) {
+      this.invinsible = 10;
+      this.hp -= dam;
+    }
+
+
 
 
     // if (this.oldHP && this.hp !== this.oldHP) {
