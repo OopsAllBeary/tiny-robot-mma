@@ -15,9 +15,11 @@ router.post('/submit-exp', asyncMiddleware(async (req, res, next) => {
 //   res.status(200).json(users);
 // }));
 
-router.get('/exp', asyncMiddleware(async (req, res, next) => {
-  const users = await UserModel.find({}, 'name experiencePoints -_id').sort({ experiencePoints: -1}).limit(10);
-  res.status(200).json(users);
+router.post('/retrieve-login', asyncMiddleware(async (req, res, next) => {
+  const { email } = req.body;
+  console.log(req.body);
+  const user = await UserModel.findOne({ email });
+  res.status(200).json(user);
 }));
 
 module.exports = router;

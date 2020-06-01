@@ -1,7 +1,11 @@
+
+let gameWidth = 800;
+let gameHeight = 600;
+
 var config = {
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
+  width: gameWidth,
+  height: gameHeight,
   physics: {
     default: 'arcade',
     arcade: {
@@ -19,6 +23,10 @@ var config = {
 var game = new Phaser.Game(config);
 
 var cursors,
+    keyW,
+    keyA,
+    keyS,
+    keyD,
     self;
 
 var punchStrong,
@@ -64,9 +72,11 @@ function create ()
   punchSlap = game.sound.add("punchSlap");
   punchWoosh = game.sound.add("punchWoosh");
 
-  this.heros = this.physics.add.group({ collideWorldBounds: true });
-  this.otherPlayers = this.physics.add.group({ collideWorldBounds: true, immovable: true });
-  this.attacks = this.physics.add.group({ collideWorldBounds: true });
+  let fakeRect = new Phaser.Geom.Rectangle(0, 0, gameWidth, gameHeight);
+
+  this.heros = this.physics.add.group({ collideWorldBounds: true, customBoundsRectangle: fakeRect });
+  this.otherPlayers = this.physics.add.group({ collideWorldBounds: true, immovable: true, customBoundsRectangle: fakeRect });
+  this.attacks = this.physics.add.group({ collideWorldBounds: true, customBoundsRectangle: fakeRect });
 
 
   this.physics.add.collider(this.otherPlayers, this.heros);
@@ -76,10 +86,12 @@ function create ()
 
   this.socket.on('currentPlayers', function (players) {
     Object.keys(players).forEach(function (id) {
-      let player = addPlayer(self, players[id]);
       if (players[id].playerId === self.socket.id) {
-        self.heros.add(player);
+        const urlParams = new URLSearchParams(window.location.search);
+        const playerEmail = urlParams.get('email');
+        let player = getPlayerData(playerEmail, players[id]);
       } else {
+        let player = addPlayer(self, players[id]);
         self.otherPlayers.add(player);
       }
     });
@@ -102,13 +114,26 @@ function create ()
       }
     });
     if (playerInfo.playerId === self.socket.id) {
-      console.log('test');
       self.heros.getChildren()[0].updateSprite(playerInfo);
     }
   });
-  this.socket.on('playerHurt', function (playerInfo) {
-    console.log(playerInfo);
-    console.log(self.socket.id);
+  this.socket.on('playerAttack', function (playerInfo) {
+    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      if (playerInfo.playerId === otherPlayer.playerId) {
+        otherPlayer.mainAttack();
+      }
+    });
+  });
+  this.socket.on('playerIdle', function (playerInfo) {
+    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      if (playerInfo.playerId === otherPlayer.playerId) {
+        otherPlayer.idle(playerInfo.facing);
+      }
+    });
+  });
+  this.socket.on('playerHealthChange', function (playerInfo) {
+    // console.log(playerInfo);
+    // console.log(self.socket.id);
     if (playerInfo.playerId === self.socket.id) {
       console.log('ouch');
       self.heros.getChildren()[0].setHP(playerInfo);
@@ -122,6 +147,10 @@ function create ()
   });
 
   cursors = this.input.keyboard.createCursorKeys();
+  keyW = this.input.keyboard.addKey('W');
+  keyA = this.input.keyboard.addKey('A');
+  keyS = this.input.keyboard.addKey('S');
+  keyD = this.input.keyboard.addKey('D');
 }
 
 function update ()
@@ -130,8 +159,12 @@ function update ()
   for (let i = 0; i < allPlayers.length; i++) {
     allPlayers[i].update();
     if (allPlayers[i].hp <= 0) {
+      console.log(allPlayers[i]);
+      allPlayers[i].healthbar.bar.destroy();
       allPlayers[i].destroy();
-      window.location.href = 'https://www.youtube.com/watch?v=t-v6xe1X1zo';
+
+
+      // window.location.href = 'https://www.youtube.com/watch?v=t-v6xe1X1zo';
     }
   }
 
@@ -143,13 +176,20 @@ function update ()
   for (let i = 0; i < allEnemies.length; i++) {
     allEnemies[i].update();
     if (allEnemies[i].hp <= 0) {
+      allEnemies[i].healthbar.bar.destroy();
       allEnemies[i].destroy();
     }
   }
 }
 
 function addPlayer(selfs, playerInfo) {
-  let thePlayer = new Player({scene: selfs, x: playerInfo.x, y: playerInfo.y, sprite: 'blueman', socket: self.socket});
+
+  console.log(playerInfo);
+  // if (!playerInfo.data) {
+  //   playerInfo.data = playerInfo;
+  // }
+
+  let thePlayer = new Player({scene: selfs, x: playerInfo.x, y: playerInfo.y, sprite: 'blueman', socket: self.socket, data: playerInfo.data});
 
   if (playerInfo.team === 'blue') {
     thePlayer.team = 'blue';
@@ -186,19 +226,34 @@ function hitCollide (player, attack) {
     if (player.body) {player.body.setVelocity(0);}
 
     player.takeDamage(attack.damage);
-    console.log(player);
-    this.socket.emit('playerHurt', { hp: player.hp, playerId: player.playerId });
+    this.socket.emit('playerHealthChange', { hp: player.hp, playerId: player.playerId });
   });
-
-  console.log(player);
-  console.log(attack);
 }
 
 function controls (player, socket) {
   if (!player.acting) {
     if (cursors.space.isDown) {
-      punchWoosh.play();
-      player.mainAttack();
+      player.mainAttack(socket);
+    } else if (keyA.isDown) {
+      if (keyW.isDown) {
+        player.legAbility('upleft', socket);
+      } else if (keyS.isDown) {
+        player.legAbility('downleft', socket);
+      } else {
+        player.legAbility('left', socket);
+      }
+    } else if (keyD.isDown) {
+      if (keyW.isDown) {
+        player.legAbility('upright', socket);
+      } else if (keyS.isDown) {
+        player.legAbility('downright', socket);
+      } else {
+        player.legAbility('right', socket);
+      }
+    } else if (keyW.isDown) {
+      player.legAbility('up', socket);
+    } else if (keyS.isDown) {
+      player.legAbility('down', socket);
     } else {
       if (cursors.left.isDown) {
         if (cursors.up.isDown) {
@@ -221,8 +276,28 @@ function controls (player, socket) {
       } else if (cursors.down.isDown) {
         player.moveInDirection('down', socket);
       } else {
-        player.idle(player.facing);
+        player.idle(player.facing, socket);
       }
     }
   }
+}
+
+function getPlayerData(id, dataObject) {
+  $.ajax({
+    type: 'POST',
+    async: false,
+    data: {
+      email: id
+    },
+    url: '/retrieve-login',
+    success: function(data) {
+      dataObject.data = data;
+      let player = addPlayer(self, dataObject);
+      self.heros.add(player);
+    },
+    error: function(xhr) {
+      console.log(xhr);
+      return null;
+    }
+  });
 }

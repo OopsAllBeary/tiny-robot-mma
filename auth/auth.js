@@ -11,8 +11,11 @@ passport.use('signup', new localStrategy({
   passReqToCallback: true
 }, async (req, email, password, done) => {
   try {
-    const { name } = req.body;
-    const user = await UserModel.create({ email, password, name});
+    const { name} = req.body;
+    const inventory = [0];
+    const money = 0;
+    const robot = [1, 101, 201, 301, 301];
+    const user = await UserModel.create({ email, password, name, inventory, money, robot});
     return done(null, user);
   } catch (error) {
     done(error);

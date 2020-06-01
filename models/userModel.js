@@ -20,6 +20,18 @@ const UserSchema = new Schema({
   experiencePoints : {
     type: Number,
     default: 0
+  },
+  money : {
+    type: Number,
+    default: 0
+  },
+  robot: {
+    type: Array,
+    default: [1, 101, 201, 301, 301]
+  },
+  inventory: {
+    type: Array,
+    default: [0]
   }
 });
 

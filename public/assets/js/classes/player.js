@@ -10,11 +10,15 @@ class Player extends Phaser.GameObjects.Sprite {
     }
 
 
-
     this.bodyCheck = false;
     this.forcedMove = false;
     this.invinsible = 0;
     this.hp = 50;
+    this.maxHP = 50;
+
+    this.speed = 160;
+
+    this.healing = false;
 
     this.socket = config.socket;
 
@@ -23,7 +27,7 @@ class Player extends Phaser.GameObjects.Sprite {
       hp: this.hp
     };
 
-    this.healthbar = new Healthbar(config.scene, config.x - 45, config.y - 70);
+    this.healthbar = new Healthbar(config.scene, config.x - 35, config.y - 70, this.hp);
   }
   update () {
     if (this.body && this.bodyCheck === false) {
@@ -40,49 +44,55 @@ class Player extends Phaser.GameObjects.Sprite {
       this.invinsible -= 1;
     }
 
-    this.healthbar.follow(this.x - 45, this.y - 70);
+    if (this.hp > this.maxHP) {
+      this.hp = this.maxHP;
+    }
+
+
+    this.healthbar.follow(this.x - 35, this.y - 70);
+    heal(this);
   }
   moveInDirection (dir, socket) {
     let xx, yy;
     switch (dir) {
       case 'down':
         xx = 0;
-        yy = 100;
+        yy = this.speed;
 
         break;
       case 'downleft':
-        xx = -75;
-        yy = 75;
+        xx = this.speed * -.75;
+        yy = this.speed * .75;
 
         break;
       case 'left':
-        xx = -100;
+        xx = -this.speed;
         yy = 0;
 
         break;
       case 'upleft':
-        xx = -75;
-        yy = -75;
+        xx = this.speed * -.75;
+        yy = this.speed * -.75;
 
         break;
       case 'up':
         xx = 0;
-        yy = -100;
+        yy = -this.speed;
 
         break;
       case 'upright':
-        xx = 75;
-        yy = -75;
+        xx = this.speed * .75;
+        yy = this.speed * -.75;
 
         break;
       case 'right':
-        xx = 100;
+        xx = this.speed;
         yy = 0;
 
         break;
       case 'downright':
-        xx = 75;
-        yy = 75;
+        xx = this.speed * .75;
+        yy = this.speed * .75;
 
         break;
     }
@@ -110,6 +120,21 @@ class Player extends Phaser.GameObjects.Sprite {
       facing: this.facing,
       animata: this.animata
     };
+  }
+
+  legAbility(dir, socket) {
+    dodge(this, dir);
+    this.forcedMove = true;
+
+    if (socket) {
+      socket.emit('playerDodge', { facing: this.facing, dir: dir });
+      socket.emit('playerHealthChange', { hp: this.hp, playerId: this.playerId });
+    }
+
+    self.time.delayedCall(200, () => {
+      this.forceMove = false;
+    });
+
   }
 
   updateSprite(playerInfo) {
@@ -166,21 +191,29 @@ class Player extends Phaser.GameObjects.Sprite {
     }
   }
 
-  idle(dir) {
+  idle(dir, socket) {
     this.body.setVelocityX(0);
     this.body.setVelocityY(0);
     this.anims.play('idle-' + dir, true);
+
+    if (socket) {
+      socket.emit('playerIdle', { facing: this.facing, playerId: this.playerId });
+    }
   }
 
   mainAttack(socket) {
     punch(this);
-    this.forcedMove = true;
+    // this.forcedMove = true;
     if (socket) {
-      socket.emit('playerAttack', { facing: this.facing });
+      socket.emit('playerAttack', { facing: this.facing, playerId: this.playerId, x: this.x, y: this.y });
     }
 
     self.time.delayedCall(300, () => {
       this.forceMove = false;
+
+      if (socket) {
+        socket.emit('playerIdle', { facing: this.facing, playerId: this.playerId });
+      }
     });
   }
 
@@ -191,7 +224,7 @@ class Player extends Phaser.GameObjects.Sprite {
       this.hp -= dam;
     }
 
-
+    this.healthbar.changeTo(this.hp);
 
 
     // if (this.oldHP && this.hp !== this.oldHP) {
@@ -207,6 +240,8 @@ class Player extends Phaser.GameObjects.Sprite {
   setHP(playerInfo) {
     console.log(playerInfo);
     this.hp = playerInfo.hp;
+
+    this.healthbar.changeTo(this.hp);
   }
 
 

@@ -31,7 +31,7 @@
         url: '/login',
         data,
         success: function (data) {
-          window.location.replace('/ttmma.html');
+          window.location.replace('/ttmma.html?email=' + document.forms[0].elements[0].value);
         },
         error: function (xhr) {
           console.warn(JSON.stringify(xhr));

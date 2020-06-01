@@ -55,13 +55,9 @@ app.use((err, req, res) => {
   res.json({ error : err });
 });
 
-// have the server start listening on the provided port
-// app.listen(process.env.PORT || 3000, () => {
-//   console.log(`Server started on port ${process.env.PORT || 3000}`);
-// });
-
 io.on('connection', function (socket) {
   console.log('a user connected');
+
   // create a new player and add it to our players object
   players[socket.id] = {
     facing: 'down',
@@ -70,8 +66,10 @@ io.on('connection', function (socket) {
     playerId: socket.id,
     team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue'
   };
+
   // send the players object to the new player
   socket.emit('currentPlayers', players);
+
   // update all other players of the new player
   socket.broadcast.emit('newPlayer', players[socket.id]);
 
@@ -95,10 +93,34 @@ io.on('connection', function (socket) {
     }
   });
 
-  socket.on('playerHurt', function (playerData) {
+  socket.on('playerIdle', function (playerData) {
+    console.log('test');
+    if (players[playerData.playerId]) {
+      console.log('idle');
+      players[playerData.playerId].facing = playerData.facing;
+      socket.broadcast.emit('playerIdle', players[playerData.playerId]);
+    }
+  });
+
+  socket.on('playerAttack', function (attackData) {
+    if (players[attackData.playerId]) {
+      players[attackData.playerId].x = attackData.x;
+      players[attackData.playerId].y = attackData.y;
+      players[attackData.playerId].facing = attackData.facing;
+      socket.broadcast.emit('playerMoved', players[attackData.playerId]);
+      socket.broadcast.emit('playerAttack', players[attackData.playerId]);
+    }
+  });
+
+  socket.on('playerDodge', function (dodgeData) {
+    if (players[dodgeData.playerId] && dodgeData.playerId !== socket.id) {
+      players[dodgeData.playerId].legAbility(dodgeData.dir);
+    }
+  });
+
+  socket.on('playerHealthChange', function (playerData) {
     players[playerData.playerId].hp = playerData.hp;
-    // emit a message to all players about the player that moved
-    socket.broadcast.emit('playerHurt', players[playerData.playerId]);
+    socket.broadcast.emit('playerHealthChange', players[playerData.playerId]);
   });
 });
 
