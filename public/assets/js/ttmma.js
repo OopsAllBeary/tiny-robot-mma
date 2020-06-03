@@ -6,6 +6,10 @@ var config = {
   type: Phaser.AUTO,
   width: gameWidth,
   height: gameHeight,
+  scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    },
   physics: {
     default: 'arcade',
     arcade: {
@@ -89,7 +93,7 @@ function create ()
       if (players[id].playerId === self.socket.id) {
         const urlParams = new URLSearchParams(window.location.search);
         const playerEmail = urlParams.get('email');
-        let player = getPlayerData(playerEmail, players[id]);
+        getPlayerData(playerEmail, players[id]);
       } else {
         let player = addPlayer(self, players[id]);
         self.otherPlayers.add(player);
@@ -108,28 +112,41 @@ function create ()
     });
   });
   this.socket.on('playerMoved', function (playerInfo) {
-    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-      if (playerInfo.playerId === otherPlayer.playerId) {
-        otherPlayer.updateSprite(playerInfo);
-      }
-    });
     if (playerInfo.playerId === self.socket.id) {
       self.heros.getChildren()[0].updateSprite(playerInfo);
+    } else {
+      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+        if (playerInfo.playerId === otherPlayer.playerId) {
+          otherPlayer.updateSprite(playerInfo);
+        }
+      });
     }
   });
   this.socket.on('playerAttack', function (playerInfo) {
-    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-      if (playerInfo.playerId === otherPlayer.playerId) {
-        otherPlayer.mainAttack();
-      }
-    });
+    console.log('test');
+    if (playerInfo.playerId === self.socket.id) {
+      self.heros.getChildren()[0].mainAttack(self.socket);
+      console.log('att');
+    } else {
+      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+        if (playerInfo.playerId === otherPlayer.playerId) {
+          otherPlayer.mainAttack();
+        }
+      });
+    }
+
   });
   this.socket.on('playerIdle', function (playerInfo) {
-    self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-      if (playerInfo.playerId === otherPlayer.playerId) {
-        otherPlayer.idle(playerInfo.facing);
-      }
-    });
+    if (playerInfo.playerId === self.socket.id) {
+      self.heros.getChildren()[0].idle(playerInfo.facing);
+    } else {
+      self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+        if (playerInfo.playerId === otherPlayer.playerId) {
+          otherPlayer.idle(playerInfo.facing);
+        }
+      });
+    }
+
   });
   this.socket.on('playerHealthChange', function (playerInfo) {
     // console.log(playerInfo);
@@ -233,7 +250,7 @@ function hitCollide (player, attack) {
 function controls (player, socket) {
   if (!player.acting) {
     if (cursors.space.isDown) {
-      player.mainAttack(socket);
+      socket.emit('playerAttack', { facing: player.facing, playerId: player.playerId, x: player.x, y: player.y });
     } else if (keyA.isDown) {
       if (keyW.isDown) {
         player.legAbility('upleft', socket);

@@ -16,6 +16,8 @@ class Player extends Phaser.GameObjects.Sprite {
     this.hp = 50;
     this.maxHP = 50;
 
+    this.idling = true;
+
     this.speed = 160;
 
     this.healing = false;
@@ -53,48 +55,49 @@ class Player extends Phaser.GameObjects.Sprite {
     heal(this);
   }
   moveInDirection (dir, socket) {
+    this.idling = false;
     let xx, yy;
     switch (dir) {
       case 'down':
-        xx = 0;
-        yy = this.speed;
+      xx = 0;
+      yy = this.speed;
 
-        break;
+      break;
       case 'downleft':
-        xx = this.speed * -.75;
-        yy = this.speed * .75;
+      xx = this.speed * -.75;
+      yy = this.speed * .75;
 
-        break;
+      break;
       case 'left':
-        xx = -this.speed;
-        yy = 0;
+      xx = -this.speed;
+      yy = 0;
 
-        break;
+      break;
       case 'upleft':
-        xx = this.speed * -.75;
-        yy = this.speed * -.75;
+      xx = this.speed * -.75;
+      yy = this.speed * -.75;
 
-        break;
+      break;
       case 'up':
-        xx = 0;
-        yy = -this.speed;
+      xx = 0;
+      yy = -this.speed;
 
-        break;
+      break;
       case 'upright':
-        xx = this.speed * .75;
-        yy = this.speed * -.75;
+      xx = this.speed * .75;
+      yy = this.speed * -.75;
 
-        break;
+      break;
       case 'right':
-        xx = this.speed;
-        yy = 0;
+      xx = this.speed;
+      yy = 0;
 
-        break;
+      break;
       case 'downright':
-        xx = this.speed * .75;
-        yy = this.speed * .75;
+      xx = this.speed * .75;
+      yy = this.speed * .75;
 
-        break;
+      break;
     }
 
     this.body.setVelocityX(xx);
@@ -123,6 +126,7 @@ class Player extends Phaser.GameObjects.Sprite {
   }
 
   legAbility(dir, socket) {
+    this.idling = false;
     dodge(this, dir);
     this.forcedMove = true;
 
@@ -192,21 +196,24 @@ class Player extends Phaser.GameObjects.Sprite {
   }
 
   idle(dir, socket) {
-    this.body.setVelocityX(0);
-    this.body.setVelocityY(0);
-    this.anims.play('idle-' + dir, true);
+    if (!this.idling) {
+      this.body.setVelocityX(0);
+      this.body.setVelocityY(0);
+      this.anims.play('idle-' + dir, true);
 
-    if (socket) {
-      socket.emit('playerIdle', { facing: this.facing, playerId: this.playerId });
+      if (socket) {
+        this.idling = true;
+        socket.emit('playerIdle', { facing: this.facing, playerId: this.playerId });
+      }
     }
+
   }
 
   mainAttack(socket) {
+    console.log('test');
+    this.idling = false;
     punch(this);
     // this.forcedMove = true;
-    if (socket) {
-      socket.emit('playerAttack', { facing: this.facing, playerId: this.playerId, x: this.x, y: this.y });
-    }
 
     self.time.delayedCall(300, () => {
       this.forceMove = false;

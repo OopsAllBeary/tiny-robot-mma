@@ -94,9 +94,7 @@ io.on('connection', function (socket) {
   });
 
   socket.on('playerIdle', function (playerData) {
-    console.log('test');
     if (players[playerData.playerId]) {
-      console.log('idle');
       players[playerData.playerId].facing = playerData.facing;
       socket.broadcast.emit('playerIdle', players[playerData.playerId]);
     }
