@@ -206,7 +206,6 @@ class Player extends Phaser.GameObjects.Sprite {
         socket.emit('playerIdle', { facing: this.facing, playerId: this.playerId });
       }
     }
-
   }
 
   mainAttack(socket) {

@@ -101,11 +101,13 @@ io.on('connection', function (socket) {
   });
 
   socket.on('playerAttack', function (attackData) {
+
     if (players[attackData.playerId]) {
+      console.log(players[attackData.playerId]);
       players[attackData.playerId].x = attackData.x;
       players[attackData.playerId].y = attackData.y;
       players[attackData.playerId].facing = attackData.facing;
-      socket.broadcast.emit('playerMoved', players[attackData.playerId]);
+      // socket.broadcast.emit('playerMoved', players[attackData.playerId]);
       socket.broadcast.emit('playerAttack', players[attackData.playerId]);
     }
   });

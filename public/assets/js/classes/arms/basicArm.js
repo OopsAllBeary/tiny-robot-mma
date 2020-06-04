@@ -6,6 +6,8 @@ function punch(hero) {
   let frame = 0;
   punchWoosh.play();
 
+  console.log(hero);
+  
   hero.anims.play(anima, true);
   hero.body.setSize(20, 50, true).setOffset(40, 0);
 
